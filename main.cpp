@@ -1,45 +1,83 @@
 #include <GL/glut.h>
 #include <math.h>
 
-//Constants
 #define PI 3.1416
 
 // Global Variables
 float earthAngle = 0.0f;
 float moonAngle  = 0.0f;
 
-//Initialization
+// Initialization
 void init()
 {
-    glClearColor(0.0, 0.0, 0.05, 1.0); // dark space background
+    glClearColor(0.0, 0.0, 0.05, 1.0);
     glEnable(GL_DEPTH_TEST);
 }
 
-//Orbit Drawing
-void drawOrbit(float radius)
+// DDA Line Algorithm
+void DDA_Line(float x1, float y1, float z1,
+              float x2, float y2, float z2)
 {
-    glColor3f(0.5, 0.5, 0.5);
+    float dx = x2 - x1;
+    float dy = y2 - y1;
+    float dz = z2 - z1;
+
+    float steps = fabs(dx);
+    if (fabs(dy) > steps) steps = fabs(dy);
+    if (fabs(dz) > steps) steps = fabs(dz);
+
+    float xi = dx / steps;
+    float yi = dy / steps;
+    float zi = dz / steps;
+
+    float x = x1;
+    float y = y1;
+    float z = z1;
+
     glBegin(GL_POINTS);
-    for (int i = 0; i < 360; i++)
+    for (int i = 0; i <= steps; i++)
     {
-        float rad = i * PI / 180.0;
-        glVertex3f(radius * cos(rad), 0, radius * sin(rad));
+        glVertex3f(x, y, z);
+        x += xi;
+        y += yi;
+        z += zi;
     }
     glEnd();
 }
 
-//Draw Planet
+//  Orbit using DDA
+void drawOrbitDDA(float radius)
+{
+    glColor3f(0.6, 0.6, 0.6);
+
+    float prevX = radius;
+    float prevZ = 0;
+
+    for (int i = 1; i <= 360; i++)
+    {
+        float angle = i * PI / 180.0;
+        float x = radius * cos(angle);
+        float z = radius * sin(angle);
+
+        DDA_Line(prevX, 0, prevZ, x, 0, z);
+
+        prevX = x;
+        prevZ = z;
+    }
+}
+
+//  Draw Planet
 void drawPlanet(float distance, float angle, float r, float g, float b, float size)
 {
     glPushMatrix();
-        glRotatef(angle, 0, 1, 0);     // revolution
-        glTranslatef(distance, 0, 0);  // distance from sun
+        glRotatef(angle, 0, 1, 0);
+        glTranslatef(distance, 0, 0);
         glColor3f(r, g, b);
         glutSolidSphere(size, 30, 30);
     glPopMatrix();
 }
 
-//Draw Moon
+// Draw Moon
 void drawMoon(float distance, float angle)
 {
     glPushMatrix();
@@ -50,26 +88,25 @@ void drawMoon(float distance, float angle)
     glPopMatrix();
 }
 
-//Scene Rendering
+// Scene
 void display()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
-    // Camera setup
     gluLookAt(0, 6, 12,
               0, 0, 0,
               0, 1, 0);
 
-    //Sun
+    //  Sun
     glColor3f(1.0, 0.8, 0.0);
     glutSolidSphere(1.5, 40, 40);
 
-    //Orbits
-    drawOrbit(4.0);
-    drawOrbit(7.0);
+    //Orbits using DDA
+    drawOrbitDDA(4.0);
+    drawOrbitDDA(7.0);
 
-    //Earth
+    //Earth + Moon
     glPushMatrix();
         glRotatef(earthAngle, 0, 1, 0);
         glTranslatef(4.0, 0, 0);
@@ -77,19 +114,18 @@ void display()
         glColor3f(0.2, 0.5, 1.0);
         glutSolidSphere(0.5, 30, 30);
 
-        // Moon orbit
-        drawOrbit(1.2);
+        drawOrbitDDA(1.2);
         drawMoon(1.2, moonAngle);
 
     glPopMatrix();
 
-    //Another Planet
+    // Another Planet
     drawPlanet(7.0, earthAngle * 0.5, 1.0, 0.4, 0.2, 0.6);
 
     glutSwapBuffers();
 }
 
-// Animation
+//Animation
 void update(int value)
 {
     earthAngle += 1.0f;
@@ -102,7 +138,7 @@ void update(int value)
     glutTimerFunc(16, update, 0);
 }
 
-// Window Resize
+// Reshape
 void reshape(int w, int h)
 {
     if (h == 0) h = 1;
@@ -116,14 +152,14 @@ void reshape(int w, int h)
     glMatrixMode(GL_MODELVIEW);
 }
 
-// Main
+// -------------------- Main --------------------
 int main(int argc, char** argv)
 {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
 
     glutInitWindowSize(900, 650);
-    glutCreateWindow("Solar System - Initial Version");
+    glutCreateWindow("Solar System - DDA Version");
 
     init();
 
