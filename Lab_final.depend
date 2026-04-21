@@ -365,7 +365,5 @@
 1512590989 c:\mingw\include\getopt.h
 	<_mingw.h>
 
-1776717321 source:f:\lab_final\main.cpp
-	<GL/glut.h>
-	<math.h>
+1776764716 source:f:\lab_final\main.cpp
 
