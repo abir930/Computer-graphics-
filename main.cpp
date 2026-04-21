@@ -128,44 +128,7 @@ void onMouseMove(int x, int y)
     glutPostRedisplay();
 }
 
-// DDA algorithm
-void DDA_Line(float x1, float y1, float z1,
-              float x2, float y2, float z2)
-{
-    float dx = x2 - x1;
-    float dy = y2 - y1;
-    float dz = z2 - z1;
 
-    float steps = fabsf(dx);
-    if (fabsf(dy) > steps) steps = fabsf(dy);
-    if (fabsf(dz) > steps) steps = fabsf(dz);
-    if (steps == 0) return;
-
-    float xi = dx / steps;
-    float yi = dy / steps;
-    float zi = dz / steps;
-
-    float x = x1;
-    float y = y1;
-    float z = z1;
-
-    glDisable(GL_LIGHTING);
-    glColor4f(0.3f, 0.3f, 0.3f, 0.5f);
-    glPointSize(1.0f);
-
-    glBegin(GL_POINTS);
-    int i;
-    for (i = 0; i <= (int)steps; i++)
-    {
-        glVertex3f(x, y, z);
-        x += xi;
-        y += yi;
-        z += zi;
-    }
-    glEnd();
-
-    glEnable(GL_LIGHTING);
-}
 
 // Bresenham algorithm
 void Bresenham_Ticks(float radius, int numTicks)
@@ -253,17 +216,7 @@ void MidpointCircle_Orbit(float radius, float r, float g, float b)
     glEnable(GL_LIGHTING);
 }
 
-// 2D transform
-void drawMoon(float angleDeg, float dist)
-{
-    float th = angleDeg * PI / 180.0f;
 
-    glPushMatrix();
-        glTranslatef(dist * cosf(th), 0, dist * sinf(th));
-        glColor3f(0.85f, 0.85f, 0.85f);
-        glutSolidSphere(0.2, 20, 20);
-    glPopMatrix();
-}
 
 // 3D rotation matrix
 void drawPlanet(float dist, float angleDeg,
@@ -324,6 +277,21 @@ void drawSaturnRings(float dist, float angleDeg)
     glPopMatrix();
 }
 
+/*--------------------------------------------*/
+/*---------------Shykha's part-----------------/
+/*--------------------------------------------*/
+
+// 2D transform
+void drawMoon(float angleDeg, float dist)
+{
+    float th = angleDeg * PI / 180.0f;
+
+    glPushMatrix();
+        glTranslatef(dist * cosf(th), 0, dist * sinf(th));
+        glColor3f(0.85f, 0.85f, 0.85f);
+        glutSolidSphere(0.2, 20, 20);
+    glPopMatrix();
+}
 //random star color and position
 void initStars()
 {
@@ -407,7 +375,7 @@ void drawStars()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
 }
-// kabbo
+
 
 //asteroid orbital position and color
 void initDebris()
@@ -467,7 +435,101 @@ void drawDebris()
     glEnable(GL_LIGHTING);
 }
 
+//camera info at the screen
+void drawHUD()
+{
+    int w = glutGet(GLUT_WINDOW_WIDTH);
+    int h = glutGet(GLUT_WINDOW_HEIGHT);
 
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0, w, 0, h);
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glDisable(GL_LIGHTING);
+    glDisable(GL_DEPTH_TEST);
+
+    glColor4f(0, 0, 0, 0.6f);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBegin(GL_QUADS);
+    glVertex2i(0, 0);  glVertex2i(w, 0);
+    glVertex2i(w, 52); glVertex2i(0, 52);
+    glEnd();
+
+    const char *hint =
+        "MOUSE: [Left-Drag] Rotate  |  [Right-Drag] Zoom  |  [Middle] Reset Camera";
+    glColor3f(0.9f, 0.9f, 0.5f);
+    glRasterPos2i(10, 34);
+    const char *p;
+    for (p = hint; *p; p++)
+        glutBitmapCharacter(GLUT_BITMAP_9_BY_15, *p);
+
+    char info[128];
+    snprintf(info, sizeof(info),
+             "Azimuth: %6.1f  Elevation: %6.1f  Zoom: %5.1f",
+             camAz, camEl, camZoom);
+    glColor3f(0.6f, 0.9f, 1.0f);
+    glRasterPos2i(10, 12);
+    for (p = info; *p; p++)
+        glutBitmapCharacter(GLUT_BITMAP_9_BY_15, *p);
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+}
+
+/*--------------------------------------------------------------------------------*/
+/*------------------------------------Kabbo's Part---------------------------------/
+/*--------------------------------------------------------------------------------*/
+
+
+
+// DDA algorithm
+void DDA_Line(float x1, float y1, float z1,
+              float x2, float y2, float z2)
+{
+    float dx = x2 - x1;
+    float dy = y2 - y1;
+    float dz = z2 - z1;
+
+    float steps = fabsf(dx);
+    if (fabsf(dy) > steps) steps = fabsf(dy);
+    if (fabsf(dz) > steps) steps = fabsf(dz);
+    if (steps == 0) return;
+
+    float xi = dx / steps;
+    float yi = dy / steps;
+    float zi = dz / steps;
+
+    float x = x1;
+    float y = y1;
+    float z = z1;
+
+    glDisable(GL_LIGHTING);
+    glColor4f(0.3f, 0.3f, 0.3f, 0.5f);
+    glPointSize(1.0f);
+
+    glBegin(GL_POINTS);
+    int i;
+    for (i = 0; i <= (int)steps; i++)
+    {
+        glVertex3f(x, y, z);
+        x += xi;
+        y += yi;
+        z += zi;
+    }
+    glEnd();
+
+    glEnable(GL_LIGHTING);
+}
 //comets orbital and tail buffer
 void initComets()
 {
@@ -640,56 +702,9 @@ static void drawPlanetLabels(void)
     glEnable(GL_LIGHTING);
 }
 
-//camera info at the screen
-void drawHUD()
-{
-    int w = glutGet(GLUT_WINDOW_WIDTH);
-    int h = glutGet(GLUT_WINDOW_HEIGHT);
-
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    gluOrtho2D(0, w, 0, h);
-
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-
-    glDisable(GL_LIGHTING);
-    glDisable(GL_DEPTH_TEST);
-
-    glColor4f(0, 0, 0, 0.6f);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glBegin(GL_QUADS);
-    glVertex2i(0, 0);  glVertex2i(w, 0);
-    glVertex2i(w, 52); glVertex2i(0, 52);
-    glEnd();
-
-    const char *hint =
-        "MOUSE: [Left-Drag] Rotate  |  [Right-Drag] Zoom  |  [Middle] Reset Camera";
-    glColor3f(0.9f, 0.9f, 0.5f);
-    glRasterPos2i(10, 34);
-    const char *p;
-    for (p = hint; *p; p++)
-        glutBitmapCharacter(GLUT_BITMAP_9_BY_15, *p);
-
-    char info[128];
-    snprintf(info, sizeof(info),
-             "Azimuth: %6.1f  Elevation: %6.1f  Zoom: %5.1f",
-             camAz, camEl, camZoom);
-    glColor3f(0.6f, 0.9f, 1.0f);
-    glRasterPos2i(10, 12);
-    for (p = info; *p; p++)
-        glutBitmapCharacter(GLUT_BITMAP_9_BY_15, *p);
-
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_LIGHTING);
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-}
+/*--------------------------------------------------------------------*/
+/*------------------------Kabbo's Part End----------------------------*/
+/*--------------------------------------------------------------------*/
 
 
 //update every frame
