@@ -253,7 +253,76 @@ void MidpointCircle_Orbit(float radius, float r, float g, float b)
     glEnable(GL_LIGHTING);
 }
 
+// 2D transform
+void drawMoon(float angleDeg, float dist)
+{
+    float th = angleDeg * PI / 180.0f;
 
+    glPushMatrix();
+        glTranslatef(dist * cosf(th), 0, dist * sinf(th));
+        glColor3f(0.85f, 0.85f, 0.85f);
+        glutSolidSphere(0.2, 20, 20);
+    glPopMatrix();
+}
+
+// 3D rotation matrix
+void drawPlanet(float dist, float angleDeg,
+                float r, float g, float b, float size)
+{
+    float th = angleDeg * PI / 180.0f;
+    float c  = cosf(th);
+    float s  = sinf(th);
+
+    float M[16] = {
+        c, 0, -s, 0,
+        0, 1,  0, 0,
+        s, 0,  c, 0,
+        0, 0,  0, 1
+    };
+
+    glPushMatrix();
+        glMultMatrixf(M);
+        glTranslatef(dist, 0, 0);
+        glColor3f(r, g, b);
+        glutSolidSphere(size, 30, 30);
+    glPopMatrix();
+}
+
+//saturn ring
+void drawSaturnRings(float dist, float angleDeg)
+{
+    float th = angleDeg * PI / 180.0f;
+    float c  = cosf(th);
+    float s  = sinf(th);
+
+    float M[16] = {
+        c, 0, -s, 0,
+        0, 1,  0, 0,
+        s, 0,  c, 0,
+        0, 0,  0, 1
+    };
+
+    glPushMatrix();
+        glMultMatrixf(M);
+        glTranslatef(dist, 0, 0);
+
+        glDisable(GL_LIGHTING);
+        glColor4f(0.85f, 0.75f, 0.5f, 0.5f);
+        glRotatef(20, 0, 0, 1);
+
+        glBegin(GL_TRIANGLE_STRIP);
+        int i;
+        for (i = 0; i <= 60; i++)
+        {
+            float a = 2 * PI * i / 60;
+            glVertex3f(1.7f * cosf(a), 0, 1.7f * sinf(a));
+            glVertex3f(1.1f * cosf(a), 0, 1.1f * sinf(a));
+        }
+        glEnd();
+
+        glEnable(GL_LIGHTING);
+    glPopMatrix();
+}
 void display()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
