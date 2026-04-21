@@ -700,7 +700,60 @@ void updateComets()
     }
 }
 
+//comets tail and dust particle
+void drawComets()
+{
+    glDisable(GL_LIGHTING);
 
+    int i;
+    for (i = 0; i < COMET_COUNT; i++)
+    {
+        Comet *c = &comets[i];
+
+        float hx, hy, hz;
+        cometPos(c, c->ang, &hx, &hy, &hz);
+
+        glBegin(GL_LINE_STRIP);
+        int j;
+        for (j = 0; j < TAIL_LEN; j++)
+        {
+            int   idx   = (c->tailHead + j) % TAIL_LEN;
+            float alpha = (float)j / TAIL_LEN;
+            glColor4f(c->cr, c->cg, c->cb, alpha * alpha * 0.8f);
+            glVertex3f(c->tailX[idx], c->tailY[idx], c->tailZ[idx]);
+        }
+        glEnd();
+
+        glPointSize(1.5f);
+        glBegin(GL_POINTS);
+        for (j = TAIL_LEN / 2; j < TAIL_LEN; j++)
+        {
+            int   idx   = (c->tailHead + j) % TAIL_LEN;
+            float alpha = (float)(j - TAIL_LEN / 2) / (TAIL_LEN / 2);
+            glColor4f(c->cr, c->cg, c->cb, alpha * 0.5f);
+
+            float sc = 0.08f * (1.0f - alpha);
+            glVertex3f(c->tailX[idx] + rf(-sc, sc),
+                       c->tailY[idx] + rf(-sc, sc),
+                       c->tailZ[idx] + rf(-sc, sc));
+        }
+        glEnd();
+
+        glPointSize(5.0f);
+        glColor3f(1.0f, 1.0f, 1.0f);
+        glBegin(GL_POINTS);
+        glVertex3f(hx, hy, hz);
+        glEnd();
+
+        glPointSize(3.0f);
+        glColor4f(c->cr, c->cg, c->cb, 0.9f);
+        glBegin(GL_POINTS);
+        glVertex3f(hx, hy, hz);
+        glEnd();
+    }
+
+    glEnable(GL_LIGHTING);
+}
 
 
 
