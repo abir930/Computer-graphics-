@@ -102,6 +102,31 @@ void onMouseBtn(int btn, int state, int x, int y)
     }
 }
 
+//camera position using mouse
+void onMouseMove(int x, int y)
+{
+    int dx = x - mouseX;
+    int dy = y - mouseY;
+
+    if (mouseBtn == GLUT_LEFT_BUTTON)
+    {
+        camAz += dx * 0.5f;
+        camEl -= dy * 0.5f;
+
+        if (camEl >  89) camEl =  89;
+        if (camEl < -89) camEl = -89;
+    }
+    else if (mouseBtn == GLUT_RIGHT_BUTTON)
+    {
+        camZoom += dy * 0.15f;
+        if (camZoom <  5) camZoom =  5;
+        if (camZoom > 90) camZoom = 90;
+    }
+
+    mouseX = x;
+    mouseY = y;
+    glutPostRedisplay();
+}
 
 // DDA algorithm
 void DDA_Line(float x1, float y1, float z1,
@@ -183,7 +208,129 @@ void Bresenham_Ticks(float radius, int numTicks)
     glEnable(GL_LIGHTING);
 }
 
+// Midpoint Circle algorithm
+void MidpointCircle_Orbit(float radius, float r, float g, float b)
+{
+    int R   = (int)(radius * 50);
+    float inv = 1.0f / 50.0f;
 
+    int x = 0;
+    int y = R;
+    int d = 1 - R;
+
+    glDisable(GL_LIGHTING);
+    glColor3f(r, g, b);
+    glPointSize(1.5f);
+
+    #define PLOT8(px, py) \
+        glVertex3f( (px)*inv, 0,  (py)*inv); \
+        glVertex3f(-(px)*inv, 0,  (py)*inv); \
+        glVertex3f( (px)*inv, 0, -(py)*inv); \
+        glVertex3f(-(px)*inv, 0, -(py)*inv); \
+        glVertex3f( (py)*inv, 0,  (px)*inv); \
+        glVertex3f(-(py)*inv, 0,  (px)*inv); \
+        glVertex3f( (py)*inv, 0, -(px)*inv); \
+        glVertex3f(-(py)*inv, 0, -(px)*inv);
+
+    glBegin(GL_POINTS);
+    PLOT8(x, y)
+
+    while (x < y)
+    {
+        x++;
+        if (d < 0)
+            d += 2 * x + 1;
+        else
+        {
+            y--;
+            d += 2 * (x - y) + 1;
+        }
+        PLOT8(x, y)
+    }
+    glEnd();
+
+    #undef PLOT8
+    glEnable(GL_LIGHTING);
+}
+
+
+void display()
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glLoadIdentity();
+
+    float cx, cy, cz;
+    getCamPos(&cx, &cy, &cz);
+    gluLookAt(cx, cy, cz, 0, 0, 0, 0, 1, 0);
+
+    drawStars();
+
+    DDA_Line(-25, 0, 0,  25, 0, 0);
+    DDA_Line( 0,  0, -25, 0, 0, 25);
+
+    MidpointCircle_Orbit( 4,  0.4f, 0.4f, 0.4f);
+    MidpointCircle_Orbit( 6,  0.5f, 0.4f, 0.3f);
+    MidpointCircle_Orbit( 8,  0.2f, 0.5f, 0.8f);
+    MidpointCircle_Orbit(10,  0.8f, 0.3f, 0.2f);
+    MidpointCircle_Orbit(13,  0.8f, 0.6f, 0.3f);
+    MidpointCircle_Orbit(16,  0.9f, 0.8f, 0.5f);
+    MidpointCircle_Orbit(19,  0.4f, 0.9f, 0.9f);
+    MidpointCircle_Orbit(22,  0.2f, 0.3f, 0.9f);
+    MidpointCircle_Orbit(11.5f, 0.45f, 0.38f, 0.25f);
+
+    Bresenham_Ticks( 8, 12);
+    Bresenham_Ticks(13,  8);
+    Bresenham_Ticks(16,  8);
+
+    glPushMatrix();
+    glDisable(GL_LIGHTING);
+    float glow = 1.0f + 0.08f * sinf(sunPulse * PI / 180.0f);
+    glColor3f(1.0f, 0.85f, 0.1f);
+    glutSolidSphere(2.5f * glow, 50, 50);
+    glColor3f(1.0f, 1.0f, 0.6f);
+    glutSolidSphere(2.0f, 50, 50);
+    glEnable(GL_LIGHTING);
+    glPopMatrix();
+
+    float lpos[] = {0, 0, 0, 1};
+    glLightfv(GL_LIGHT0, GL_POSITION, lpos);
+
+    drawPlanet( 4, angMercury, 0.55f, 0.55f, 0.55f, 0.28f);
+    drawPlanet( 6, angVenus,   1.0f,  0.6f,  0.2f,  0.5f );
+    drawPlanet(10, angMars,    0.9f,  0.3f,  0.15f, 0.4f );
+    drawPlanet(13, angJupiter, 1.0f,  0.7f,  0.3f,  1.0f );
+    drawPlanet(16, angSaturn,  1.0f,  0.85f, 0.5f,  0.85f);
+    drawPlanet(19, angUranus,  0.4f,  0.9f,  0.9f,  0.7f );
+    drawPlanet(22, angNeptune, 0.2f,  0.3f,  0.95f, 0.65f);
+    drawSaturnRings(16, angSaturn);
+
+    {
+        float th = angEarth * PI / 180.0f;
+        float c  = cosf(th);
+        float s  = sinf(th);
+
+        float M[16] = {
+            c, 0, -s, 0,
+            0, 1,  0, 0,
+            s, 0,  c, 0,
+            0, 0,  0, 1
+        };
+
+        glPushMatrix();
+            glMultMatrixf(M);
+            glTranslatef(8, 0, 0);
+            glColor3f(0.15f, 0.45f, 1.0f);
+            glutSolidSphere(0.6f, 30, 30);
+            drawMoon(angMoon, 1.5f);
+        glPopMatrix();
+    }
+
+    drawDebris();
+    drawComets();
+    drawHUD();
+
+    glutSwapBuffers();
+}
 
 //openGL initialization
 void init()
@@ -217,41 +364,6 @@ void init()
 }
 
 
-//angle update of every planet in 16ms
-void update(int v)
-{
-    angMercury += 2.0f;  if (angMercury > 360) angMercury -= 360;
-    angVenus   += 1.5f;  if (angVenus   > 360) angVenus   -= 360;
-    angEarth   += 1.0f;  if (angEarth   > 360) angEarth   -= 360;
-    angMars    += 0.8f;  if (angMars    > 360) angMars    -= 360;
-    angJupiter += 0.4f;  if (angJupiter > 360) angJupiter -= 360;
-    angSaturn  += 0.3f;  if (angSaturn  > 360) angSaturn  -= 360;
-    angUranus  += 0.2f;  if (angUranus  > 360) angUranus  -= 360;
-    angNeptune += 0.1f;  if (angNeptune > 360) angNeptune -= 360;
-    angMoon    += 3.0f;  if (angMoon    > 360) angMoon    -= 360;
-    sunPulse   += 1.5f;  if (sunPulse   > 360) sunPulse   -= 360;
-
-    updateDebris();
-    updateComets();
-
-    glutPostRedisplay();
-    glutTimerFunc(16, update, 0);
-}
-
-
-//projection matrix update in window resize
-void reshape(int w, int h)
-{
-    if (!h) h = 1;
-
-    glViewport(0, 0, w, h);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(60, (float)w / h, 1, 300);
-
-    glMatrixMode(GL_MODELVIEW);
-}
 
 //main function
 int main(int argc, char **argv)
