@@ -590,6 +590,55 @@ void drawComets()
     glEnable(GL_LIGHTING);
 }
 
+// planet lebeling
+static void drawPlanetLabels(void)
+{
+    typedef struct { float dist; float ang; const char *name; } PInfo;
+    PInfo pl[] = {
+        {  4, angMercury, "Mercury" },
+        {  6, angVenus,   "Venus"   },
+        {  8, angEarth,   "Earth"   },
+        { 10, angMars,    "Mars"    },
+        { 13, angJupiter, "Jupiter" },
+        { 16, angSaturn,  "Saturn"  },
+        { 19, angUranus,  "Uranus"  },
+        { 22, angNeptune, "Neptune" }
+    };
+
+    glDisable(GL_LIGHTING);
+    glDisable(GL_DEPTH_TEST);
+    glColor3f(1.0f, 1.0f, 1.0f);
+
+    for (int i = 0; i < 8; i++)
+    {
+        float th = pl[i].ang * PI / 180.0f;
+        float c  = cosf(th);
+        float s  = sinf(th);
+
+        float M[16] = {
+            c, 0, -s, 0,
+            0, 1,  0, 0,
+            s, 0,  c, 0,
+            0, 0,  0, 1
+        };
+
+        glPushMatrix();
+            glMultMatrixf(M);
+            glTranslatef(pl[i].dist, 0, 0);
+
+            // label position (planet er sathe same transform)
+            glRasterPos3f(0.3f, 0.5f, 0.3f);
+
+            const char *p;
+            for (p = pl[i].name; *p; p++)
+                glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, *p);
+
+        glPopMatrix();
+    }
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+}
 
 //camera info at the screen
 void drawHUD()
@@ -717,6 +766,7 @@ void display()
 
     drawDebris();
     drawComets();
+    drawPlanetLabels();
     drawHUD();
 
     glutSwapBuffers();
@@ -811,31 +861,3 @@ int main(int argc, char **argv)
     glutMainLoop();
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
