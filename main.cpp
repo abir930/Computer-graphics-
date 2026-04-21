@@ -576,6 +576,96 @@ void drawDebris(void)
 
     glEnable(GL_LIGHTING);
 }
+//asteroid orbital position and color
+void initDebris()
+{
+    int i;
+    for (i = 0; i < DEBRIS_COUNT; i++)
+    {
+        debOrbR[i]   = rf(10.5f, 12.5f);
+        debOrbAng[i] = rf(0.0f, 360.0f);
+        debSpeed[i]  = rf(0.05f, 0.25f);
+        debSize[i]   = rf(1.0f, 2.8f);
+
+        float base = rf(0.35f, 0.65f);
+        debR[i] = base + rf(-0.1f,  0.15f);
+        debG[i] = base + rf(-0.05f, 0.05f);
+        debB[i] = base * rf(0.6f,   0.85f);
+
+        float th = debOrbAng[i] * PI / 180.0f;
+        debX[i] = debOrbR[i] * cosf(th);
+        debY[i] = rf(-0.3f, 0.3f);
+        debZ[i] = debOrbR[i] * sinf(th);
+    }
+}
+
+
+//asteroid belt position update
+void updateDebris()
+{
+    int i;
+    for (i = 0; i < DEBRIS_COUNT; i++)
+    {
+        debOrbAng[i] += debSpeed[i];
+        if (debOrbAng[i] > 360.0f) debOrbAng[i] -= 360.0f;
+
+        float th = debOrbAng[i] * PI / 180.0f;
+        debX[i] = debOrbR[i] * cosf(th);
+        debZ[i] = debOrbR[i] * sinf(th);
+    }
+}
+
+
+//orbital of asteroid belt
+void drawDebris()
+{
+    glDisable(GL_LIGHTING);
+
+    int i;
+    for (i = 0; i < DEBRIS_COUNT; i++)
+    {
+        glPointSize(debSize[i]);
+        glColor3f(debR[i], debG[i], debB[i]);
+        glBegin(GL_POINTS);
+        glVertex3f(debX[i], debY[i], debZ[i]);
+        glEnd();
+    }
+
+    glEnable(GL_LIGHTING);
+}
+
+
+//comets orbital and tail buffer
+void initComets()
+{
+    int i;
+    for (i = 0; i < COMET_COUNT; i++)
+    {
+        comets[i].a        = rf(18.0f, 32.0f);
+        comets[i].b        = rf(5.0f,  12.0f);
+        comets[i].incline  = rf(-40.0f, 40.0f);
+        comets[i].angSpeed = rf(0.15f,  0.4f);
+        comets[i].ang      = rf(0.0f,  360.0f);
+        comets[i].tailHead = 0;
+
+        comets[i].cr = 1.0f;
+        comets[i].cg = 0.0f;
+        comets[i].cb = 0.0f;
+
+        float th = comets[i].ang * PI / 180.0f;
+        float hx = comets[i].a * cosf(th);
+        float hz = comets[i].b * sinf(th);
+
+        int j;
+        for (j = 0; j < TAIL_LEN; j++)
+        {
+            comets[i].tailX[j] = hx;
+            comets[i].tailY[j] = 0;
+            comets[i].tailZ[j] = hz;
+        }
+    }
+}
+
 
 
 
