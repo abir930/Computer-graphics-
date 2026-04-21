@@ -431,6 +431,151 @@ void init()
            STAR_COUNT, DEBRIS_COUNT, COMET_COUNT);
     printf("Algorithms: DDA | Bresenham | Midpoint Circle | 2D/3D Transform\n\n");
 }
+glVertex3f(starX[i], starY[i], starZ[i]);
+    }
+    glEnd();
+
+    /* Pass 2 — bright stars, 2 px */
+    glPointSize(2.0f);
+    glBegin(GL_POINTS);
+    for (i = 0; i < STAR_COUNT; i += 4)
+    {
+        if (starBright[i] > 0.6f)
+        {
+            if (starType[i] == 0) glColor3f(1.0f, 1.0f,  1.0f );
+            if (starType[i] == 1) glColor3f(1.0f, 0.92f, 0.6f );
+            if (starType[i] == 2) glColor3f(0.7f, 0.85f, 1.0f );
+            if (starType[i] == 3) glColor3f(1.0f, 0.35f, 0.2f );
+            glVertex3f(starX[i], starY[i], starZ[i]);
+        }
+    }
+    glEnd();
+
+    /* Pass 3 — very bright stars, 3 px */
+    glPointSize(3.0f);
+    glBegin(GL_POINTS);
+    for (i = 0; i < STAR_COUNT; i += 18)
+    {
+        if (starBright[i] > 0.85f)
+        {
+            if (starType[i] == 0) glColor3f(1.0f,  1.0f,   1.0f );
+            if (starType[i] == 1) glColor3f(1.0f,  0.95f,  0.65f);
+            if (starType[i] == 2) glColor3f(0.75f, 0.90f,  1.0f );
+            if (starType[i] == 3) glColor3f(1.0f,  0.40f,  0.25f);
+            glVertex3f(starX[i], starY[i], starZ[i]);
+        }
+    }
+    glEnd();
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+}
+
+
+void initDebris(void)
+{
+    int i;
+    for (i = 0; i < DEBRIS_COUNT; i++)
+    {void initStars(void)
+{
+    srand(42);
+
+    int i;
+    for (i = 0; i < STAR_COUNT; i++)
+    {
+        float az = rf(0, 2.0f * PI);
+        float el = rf(-PI / 2.0f, PI / 2.0f);
+
+        /* Bias toward equatorial belt for a Milky-Way feel */
+        el = el * fabsf(el) * 0.5f + rf(-0.25f, 0.25f);
+
+        float r = rf(120.0f, 160.0f);
+
+        starX[i] = r * cosf(el) * cosf(az);
+        starY[i] = r * sinf(el);
+        starZ[i] = r * cosf(el) * sinf(az);
+
+        starBright[i] = rf(0.2f, 1.0f);
+
+        /* Spectral type distribution:
+         * 0 = white (50%), 1 = yellow (20%), 2 = blue-white (20%), 3 = red (10%) */
+        int t = rand() % 10;
+        if      (t < 5) starType[i] = 0;
+        else if (t < 7) starType[i] = 1;
+        else if (t < 9) starType[i] = 2;
+        else            starType[i] = 3;
+    }
+}
+
+
+void drawStars(void)
+{
+    glDisable(GL_LIGHTING);
+    glDisable(GL_DEPTH_TEST);
+
+    int i;
+
+
+    glPointSize(1.0f);
+    glBegin(GL_POINTS);
+    for (i = 0; i < STAR_COUNT; i++)
+    {
+        float b = starBright[i];
+        if (starType[i] == 0) glColor3f(b,        b,        b      );
+        if (starType[i] == 1) glColor3f(b,        b*0.85f,  b*0.6f );
+        if (starType[i] == 2) glColor3f(b*0.7f,   b*0.85f,  b      );
+        if (starType[i] == 3) glColor3f(b,        b*0.3f,   b*0.2f );
+
+        debOrbR[i]   = rf(10.5f, 12.5f);
+        debOrbAng[i] = rf(0.0f, 360.0f);
+        debSpeed[i]  = rf(0.05f, 0.25f);
+        debSize[i]   = rf(1.0f, 2.8f);
+
+        /* Rocky grey-brown colour with slight variation */
+        float base = rf(0.35f, 0.65f);
+        debR[i] = base + rf(-0.10f,  0.15f);
+        debG[i] = base + rf(-0.05f,  0.05f);
+        debB[i] = base * rf(0.60f,   0.85f);
+
+        float th = debOrbAng[i] * PI / 180.0f;
+        debX[i] = debOrbR[i] * cosf(th);
+        debY[i] = rf(-0.3f, 0.3f);
+        debZ[i] = debOrbR[i] * sinf(th);
+    }
+}
+
+
+void updateDebris(void)
+{
+    int i;
+    for (i = 0; i < DEBRIS_COUNT; i++)
+    {
+        debOrbAng[i] += debSpeed[i];
+        if (debOrbAng[i] > 360.0f) debOrbAng[i] -= 360.0f;
+
+        float th = debOrbAng[i] * PI / 180.0f;
+        debX[i] = debOrbR[i] * cosf(th);
+        debZ[i] = debOrbR[i] * sinf(th);
+    }
+}
+
+
+void drawDebris(void)
+{
+    glDisable(GL_LIGHTING);
+
+    int i;
+    for (i = 0; i < DEBRIS_COUNT; i++)
+    {
+        glPointSize(debSize[i]);
+        glColor3f(debR[i], debG[i], debB[i]);
+        glBegin(GL_POINTS);
+        glVertex3f(debX[i], debY[i], debZ[i]);
+        glEnd();
+    }
+
+    glEnable(GL_LIGHTING);
+}
 
 
 
