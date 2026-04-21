@@ -666,6 +666,41 @@ void initComets()
     }
 }
 
+//comets 3D position using ellipse and incline formula
+void cometPos(Comet *c, float ang, float *ox, float *oy, float *oz)
+{
+    float th  = ang * PI / 180.0f;
+    float lx  = c->a * cosf(th);
+    float lz  = c->b * sinf(th);
+    float inc = c->incline * PI / 180.0f;
+
+    *ox = lx;
+    *oy = lz * sinf(inc);
+    *oz = lz * cosf(inc);
+}
+
+
+//comets position update in every frame
+void updateComets()
+{
+    int i;
+    for (i = 0; i < COMET_COUNT; i++)
+    {
+        comets[i].ang += comets[i].angSpeed;
+        if (comets[i].ang > 360) comets[i].ang -= 360;
+
+        float hx, hy, hz;
+        cometPos(&comets[i], comets[i].ang, &hx, &hy, &hz);
+
+        int h = comets[i].tailHead;
+        comets[i].tailX[h] = hx;
+        comets[i].tailY[h] = hy;
+        comets[i].tailZ[h] = hz;
+        comets[i].tailHead = (h + 1) % TAIL_LEN;
+    }
+}
+
+
 
 
 
