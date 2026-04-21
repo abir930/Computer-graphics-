@@ -323,6 +323,327 @@ void drawSaturnRings(float dist, float angleDeg)
         glEnable(GL_LIGHTING);
     glPopMatrix();
 }
+
+//random star color and position
+void initStars()
+{
+    srand(42);
+
+    int i;
+    for (i = 0; i < STAR_COUNT; i++)
+    {
+        float az = rf(0, 2 * PI);
+        float el = rf(-PI / 2.0f, PI / 2.0f);
+
+        el = el * fabsf(el) * 0.5f + rf(-0.25f, 0.25f);
+
+        float r = rf(120.0f, 160.0f);
+
+        starX[i] = r * cosf(el) * cosf(az);
+        starY[i] = r * sinf(el);
+        starZ[i] = r * cosf(el) * sinf(az);
+
+        starBright[i] = rf(0.2f, 1.0f);
+
+        int t = rand() % 10;
+        if (t < 5)       starType[i] = 0;
+        else if (t < 7)  starType[i] = 1;
+        else if (t < 9)  starType[i] = 2;
+        else             starType[i] = 3;
+    }
+}
+
+
+void drawStars()
+{
+    glDisable(GL_LIGHTING);
+    glDisable(GL_DEPTH_TEST);
+
+    int i;
+
+    glPointSize(1.0f);
+    glBegin(GL_POINTS);
+    for (i = 0; i < STAR_COUNT; i++)
+    {
+        float b = starBright[i];
+        if (starType[i] == 0) glColor3f(b,        b,        b      );
+        if (starType[i] == 1) glColor3f(b,        b*0.85f,  b*0.6f );
+        if (starType[i] == 2) glColor3f(b*0.7f,   b*0.85f,  b      );
+        if (starType[i] == 3) glColor3f(b,        b*0.3f,   b*0.2f );
+        glVertex3f(starX[i], starY[i], starZ[i]);
+    }
+    glEnd();
+
+    glPointSize(2.0f);
+    glBegin(GL_POINTS);
+    for (i = 0; i < STAR_COUNT; i += 4)
+    {
+        if (starBright[i] > 0.6f)
+        {
+            if (starType[i] == 0) glColor3f(1.0f, 1.0f,  1.0f );
+            if (starType[i] == 1) glColor3f(1.0f, 0.92f, 0.6f );
+            if (starType[i] == 2) glColor3f(0.7f, 0.85f, 1.0f );
+            if (starType[i] == 3) glColor3f(1.0f, 0.35f, 0.2f );
+            glVertex3f(starX[i], starY[i], starZ[i]);
+        }
+    }
+    glEnd();
+
+    glPointSize(3.0f);
+    glBegin(GL_POINTS);
+    for (i = 0; i < STAR_COUNT; i += 18)
+    {
+        if (starBright[i] > 0.85f)
+        {
+            if (starType[i] == 0) glColor3f(1.0f,  1.0f,   1.0f );
+            if (starType[i] == 1) glColor3f(1.0f,  0.95f,  0.65f);
+            if (starType[i] == 2) glColor3f(0.75f, 0.9f,   1.0f );
+            if (starType[i] == 3) glColor3f(1.0f,  0.4f,   0.25f);
+            glVertex3f(starX[i], starY[i], starZ[i]);
+        }
+    }
+    glEnd();
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+}
+// kabbo
+
+//asteroid orbital position and color
+void initDebris()
+{
+    int i;
+    for (i = 0; i < DEBRIS_COUNT; i++)
+    {
+        debOrbR[i]   = rf(10.5f, 12.5f);
+        debOrbAng[i] = rf(0.0f, 360.0f);
+        debSpeed[i]  = rf(0.05f, 0.25f);
+        debSize[i]   = rf(1.0f, 2.8f);
+
+        float base = rf(0.35f, 0.65f);
+        debR[i] = base + rf(-0.1f,  0.15f);
+        debG[i] = base + rf(-0.05f, 0.05f);
+        debB[i] = base * rf(0.6f,   0.85f);
+
+        float th = debOrbAng[i] * PI / 180.0f;
+        debX[i] = debOrbR[i] * cosf(th);
+        debY[i] = rf(-0.3f, 0.3f);
+        debZ[i] = debOrbR[i] * sinf(th);
+    }
+}
+
+
+//asteroid belt position update
+void updateDebris()
+{
+    int i;
+    for (i = 0; i < DEBRIS_COUNT; i++)
+    {
+        debOrbAng[i] += debSpeed[i];
+        if (debOrbAng[i] > 360.0f) debOrbAng[i] -= 360.0f;
+
+        float th = debOrbAng[i] * PI / 180.0f;
+        debX[i] = debOrbR[i] * cosf(th);
+        debZ[i] = debOrbR[i] * sinf(th);
+    }
+}
+
+
+//orbital of asteroid belt
+void drawDebris()
+{
+    glDisable(GL_LIGHTING);
+
+    int i;
+    for (i = 0; i < DEBRIS_COUNT; i++)
+    {
+        glPointSize(debSize[i]);
+        glColor3f(debR[i], debG[i], debB[i]);
+        glBegin(GL_POINTS);
+        glVertex3f(debX[i], debY[i], debZ[i]);
+        glEnd();
+    }
+
+    glEnable(GL_LIGHTING);
+}
+
+
+//comets orbital and tail buffer
+void initComets()
+{
+    int i;
+    for (i = 0; i < COMET_COUNT; i++)
+    {
+        comets[i].a        = rf(18.0f, 32.0f);
+        comets[i].b        = rf(5.0f,  12.0f);
+        comets[i].incline  = rf(-40.0f, 40.0f);
+        comets[i].angSpeed = rf(0.15f,  0.4f);
+        comets[i].ang      = rf(0.0f,  360.0f);
+        comets[i].tailHead = 0;
+
+        comets[i].cr = 1.0f;
+        comets[i].cg = 0.0f;
+        comets[i].cb = 0.0f;
+
+        float th = comets[i].ang * PI / 180.0f;
+        float hx = comets[i].a * cosf(th);
+        float hz = comets[i].b * sinf(th);
+
+        int j;
+        for (j = 0; j < TAIL_LEN; j++)
+        {
+            comets[i].tailX[j] = hx;
+            comets[i].tailY[j] = 0;
+            comets[i].tailZ[j] = hz;
+        }
+    }
+}
+
+
+//comets 3D position using ellipse and incline formula
+void cometPos(Comet *c, float ang, float *ox, float *oy, float *oz)
+{
+    float th  = ang * PI / 180.0f;
+    float lx  = c->a * cosf(th);
+    float lz  = c->b * sinf(th);
+    float inc = c->incline * PI / 180.0f;
+
+    *ox = lx;
+    *oy = lz * sinf(inc);
+    *oz = lz * cosf(inc);
+}
+
+
+//comets position update in every frame
+void updateComets()
+{
+    int i;
+    for (i = 0; i < COMET_COUNT; i++)
+    {
+        comets[i].ang += comets[i].angSpeed;
+        if (comets[i].ang > 360) comets[i].ang -= 360;
+
+        float hx, hy, hz;
+        cometPos(&comets[i], comets[i].ang, &hx, &hy, &hz);
+
+        int h = comets[i].tailHead;
+        comets[i].tailX[h] = hx;
+        comets[i].tailY[h] = hy;
+        comets[i].tailZ[h] = hz;
+        comets[i].tailHead = (h + 1) % TAIL_LEN;
+    }
+}
+
+
+//comets tail and dust particle
+void drawComets()
+{
+    glDisable(GL_LIGHTING);
+
+    int i;
+    for (i = 0; i < COMET_COUNT; i++)
+    {
+        Comet *c = &comets[i];
+
+        float hx, hy, hz;
+        cometPos(c, c->ang, &hx, &hy, &hz);
+
+        glBegin(GL_LINE_STRIP);
+        int j;
+        for (j = 0; j < TAIL_LEN; j++)
+        {
+            int   idx   = (c->tailHead + j) % TAIL_LEN;
+            float alpha = (float)j / TAIL_LEN;
+            glColor4f(c->cr, c->cg, c->cb, alpha * alpha * 0.8f);
+            glVertex3f(c->tailX[idx], c->tailY[idx], c->tailZ[idx]);
+        }
+        glEnd();
+
+        glPointSize(1.5f);
+        glBegin(GL_POINTS);
+        for (j = TAIL_LEN / 2; j < TAIL_LEN; j++)
+        {
+            int   idx   = (c->tailHead + j) % TAIL_LEN;
+            float alpha = (float)(j - TAIL_LEN / 2) / (TAIL_LEN / 2);
+            glColor4f(c->cr, c->cg, c->cb, alpha * 0.5f);
+
+            float sc = 0.08f * (1.0f - alpha);
+            glVertex3f(c->tailX[idx] + rf(-sc, sc),
+                       c->tailY[idx] + rf(-sc, sc),
+                       c->tailZ[idx] + rf(-sc, sc));
+        }
+        glEnd();
+
+        glPointSize(5.0f);
+        glColor3f(1.0f, 1.0f, 1.0f);
+        glBegin(GL_POINTS);
+        glVertex3f(hx, hy, hz);
+        glEnd();
+
+        glPointSize(3.0f);
+        glColor4f(c->cr, c->cg, c->cb, 0.9f);
+        glBegin(GL_POINTS);
+        glVertex3f(hx, hy, hz);
+        glEnd();
+    }
+
+    glEnable(GL_LIGHTING);
+}
+
+
+//camera info at the screen
+void drawHUD()
+{
+    int w = glutGet(GLUT_WINDOW_WIDTH);
+    int h = glutGet(GLUT_WINDOW_HEIGHT);
+
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0, w, 0, h);
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glDisable(GL_LIGHTING);
+    glDisable(GL_DEPTH_TEST);
+
+    glColor4f(0, 0, 0, 0.6f);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBegin(GL_QUADS);
+    glVertex2i(0, 0);  glVertex2i(w, 0);
+    glVertex2i(w, 52); glVertex2i(0, 52);
+    glEnd();
+
+    const char *hint =
+        "MOUSE: [Left-Drag] Rotate  |  [Right-Drag] Zoom  |  [Middle] Reset Camera";
+    glColor3f(0.9f, 0.9f, 0.5f);
+    glRasterPos2i(10, 34);
+    const char *p;
+    for (p = hint; *p; p++)
+        glutBitmapCharacter(GLUT_BITMAP_9_BY_15, *p);
+
+    char info[128];
+    snprintf(info, sizeof(info),
+             "Azimuth: %6.1f  Elevation: %6.1f  Zoom: %5.1f",
+             camAz, camEl, camZoom);
+    glColor3f(0.6f, 0.9f, 1.0f);
+    glRasterPos2i(10, 12);
+    for (p = info; *p; p++)
+        glutBitmapCharacter(GLUT_BITMAP_9_BY_15, *p);
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+}
+
+
+//update every frame
 void display()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -431,331 +752,43 @@ void init()
            STAR_COUNT, DEBRIS_COUNT, COMET_COUNT);
     printf("Algorithms: DDA | Bresenham | Midpoint Circle | 2D/3D Transform\n\n");
 }
-glVertex3f(starX[i], starY[i], starZ[i]);
-    }
-    glEnd();
 
-    /* Pass 2 — bright stars, 2 px */
-    glPointSize(2.0f);
-    glBegin(GL_POINTS);
-    for (i = 0; i < STAR_COUNT; i += 4)
-    {
-        if (starBright[i] > 0.6f)
-        {
-            if (starType[i] == 0) glColor3f(1.0f, 1.0f,  1.0f );
-            if (starType[i] == 1) glColor3f(1.0f, 0.92f, 0.6f );
-            if (starType[i] == 2) glColor3f(0.7f, 0.85f, 1.0f );
-            if (starType[i] == 3) glColor3f(1.0f, 0.35f, 0.2f );
-            glVertex3f(starX[i], starY[i], starZ[i]);
-        }
-    }
-    glEnd();
 
-    /* Pass 3 — very bright stars, 3 px */
-    glPointSize(3.0f);
-    glBegin(GL_POINTS);
-    for (i = 0; i < STAR_COUNT; i += 18)
-    {
-        if (starBright[i] > 0.85f)
-        {
-            if (starType[i] == 0) glColor3f(1.0f,  1.0f,   1.0f );
-            if (starType[i] == 1) glColor3f(1.0f,  0.95f,  0.65f);
-            if (starType[i] == 2) glColor3f(0.75f, 0.90f,  1.0f );
-            if (starType[i] == 3) glColor3f(1.0f,  0.40f,  0.25f);
-            glVertex3f(starX[i], starY[i], starZ[i]);
-        }
-    }
-    glEnd();
+//angle update of every planet in 16ms
+void update(int v)
+{
+    angMercury += 2.0f;  if (angMercury > 360) angMercury -= 360;
+    angVenus   += 1.5f;  if (angVenus   > 360) angVenus   -= 360;
+    angEarth   += 1.0f;  if (angEarth   > 360) angEarth   -= 360;
+    angMars    += 0.8f;  if (angMars    > 360) angMars    -= 360;
+    angJupiter += 0.4f;  if (angJupiter > 360) angJupiter -= 360;
+    angSaturn  += 0.3f;  if (angSaturn  > 360) angSaturn  -= 360;
+    angUranus  += 0.2f;  if (angUranus  > 360) angUranus  -= 360;
+    angNeptune += 0.1f;  if (angNeptune > 360) angNeptune -= 360;
+    angMoon    += 3.0f;  if (angMoon    > 360) angMoon    -= 360;
+    sunPulse   += 1.5f;  if (sunPulse   > 360) sunPulse   -= 360;
 
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_LIGHTING);
+    updateDebris();
+    updateComets();
+
+    glutPostRedisplay();
+    glutTimerFunc(16, update, 0);
 }
 
 
-void initDebris(void)
+//projection matrix update in window resize
+void reshape(int w, int h)
 {
-    int i;
-    for (i = 0; i < DEBRIS_COUNT; i++)
-    {void initStars(void)
-{
-    srand(42);
+    if (!h) h = 1;
 
-    int i;
-    for (i = 0; i < STAR_COUNT; i++)
-    {
-        float az = rf(0, 2.0f * PI);
-        float el = rf(-PI / 2.0f, PI / 2.0f);
+    glViewport(0, 0, w, h);
 
-        /* Bias toward equatorial belt for a Milky-Way feel */
-        el = el * fabsf(el) * 0.5f + rf(-0.25f, 0.25f);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(60, (float)w / h, 1, 300);
 
-        float r = rf(120.0f, 160.0f);
-
-        starX[i] = r * cosf(el) * cosf(az);
-        starY[i] = r * sinf(el);
-        starZ[i] = r * cosf(el) * sinf(az);
-
-        starBright[i] = rf(0.2f, 1.0f);
-
-        /* Spectral type distribution:
-         * 0 = white (50%), 1 = yellow (20%), 2 = blue-white (20%), 3 = red (10%) */
-        int t = rand() % 10;
-        if      (t < 5) starType[i] = 0;
-        else if (t < 7) starType[i] = 1;
-        else if (t < 9) starType[i] = 2;
-        else            starType[i] = 3;
-    }
+    glMatrixMode(GL_MODELVIEW);
 }
-
-
-void drawStars(void)
-{
-    glDisable(GL_LIGHTING);
-    glDisable(GL_DEPTH_TEST);
-
-    int i;
-
-
-    glPointSize(1.0f);
-    glBegin(GL_POINTS);
-    for (i = 0; i < STAR_COUNT; i++)
-    {
-        float b = starBright[i];
-        if (starType[i] == 0) glColor3f(b,        b,        b      );
-        if (starType[i] == 1) glColor3f(b,        b*0.85f,  b*0.6f );
-        if (starType[i] == 2) glColor3f(b*0.7f,   b*0.85f,  b      );
-        if (starType[i] == 3) glColor3f(b,        b*0.3f,   b*0.2f );
-
-        debOrbR[i]   = rf(10.5f, 12.5f);
-        debOrbAng[i] = rf(0.0f, 360.0f);
-        debSpeed[i]  = rf(0.05f, 0.25f);
-        debSize[i]   = rf(1.0f, 2.8f);
-
-        /* Rocky grey-brown colour with slight variation */
-        float base = rf(0.35f, 0.65f);
-        debR[i] = base + rf(-0.10f,  0.15f);
-        debG[i] = base + rf(-0.05f,  0.05f);
-        debB[i] = base * rf(0.60f,   0.85f);
-
-        float th = debOrbAng[i] * PI / 180.0f;
-        debX[i] = debOrbR[i] * cosf(th);
-        debY[i] = rf(-0.3f, 0.3f);
-        debZ[i] = debOrbR[i] * sinf(th);
-    }
-}
-
-
-void updateDebris(void)
-{
-    int i;
-    for (i = 0; i < DEBRIS_COUNT; i++)
-    {
-        debOrbAng[i] += debSpeed[i];
-        if (debOrbAng[i] > 360.0f) debOrbAng[i] -= 360.0f;
-
-        float th = debOrbAng[i] * PI / 180.0f;
-        debX[i] = debOrbR[i] * cosf(th);
-        debZ[i] = debOrbR[i] * sinf(th);
-    }
-}
-
-
-void drawDebris(void)
-{
-    glDisable(GL_LIGHTING);
-
-    int i;
-    for (i = 0; i < DEBRIS_COUNT; i++)
-    {
-        glPointSize(debSize[i]);
-        glColor3f(debR[i], debG[i], debB[i]);
-        glBegin(GL_POINTS);
-        glVertex3f(debX[i], debY[i], debZ[i]);
-        glEnd();
-    }
-
-    glEnable(GL_LIGHTING);
-}
-//asteroid orbital position and color
-void initDebris()
-{
-    int i;
-    for (i = 0; i < DEBRIS_COUNT; i++)
-    {
-        debOrbR[i]   = rf(10.5f, 12.5f);
-        debOrbAng[i] = rf(0.0f, 360.0f);
-        debSpeed[i]  = rf(0.05f, 0.25f);
-        debSize[i]   = rf(1.0f, 2.8f);
-
-        float base = rf(0.35f, 0.65f);
-        debR[i] = base + rf(-0.1f,  0.15f);
-        debG[i] = base + rf(-0.05f, 0.05f);
-        debB[i] = base * rf(0.6f,   0.85f);
-
-        float th = debOrbAng[i] * PI / 180.0f;
-        debX[i] = debOrbR[i] * cosf(th);
-        debY[i] = rf(-0.3f, 0.3f);
-        debZ[i] = debOrbR[i] * sinf(th);
-    }
-}
-
-
-//asteroid belt position update
-void updateDebris()
-{
-    int i;
-    for (i = 0; i < DEBRIS_COUNT; i++)
-    {
-        debOrbAng[i] += debSpeed[i];
-        if (debOrbAng[i] > 360.0f) debOrbAng[i] -= 360.0f;
-
-        float th = debOrbAng[i] * PI / 180.0f;
-        debX[i] = debOrbR[i] * cosf(th);
-        debZ[i] = debOrbR[i] * sinf(th);
-    }
-}
-
-
-//orbital of asteroid belt
-void drawDebris()
-{
-    glDisable(GL_LIGHTING);
-
-    int i;
-    for (i = 0; i < DEBRIS_COUNT; i++)
-    {
-        glPointSize(debSize[i]);
-        glColor3f(debR[i], debG[i], debB[i]);
-        glBegin(GL_POINTS);
-        glVertex3f(debX[i], debY[i], debZ[i]);
-        glEnd();
-    }
-
-    glEnable(GL_LIGHTING);
-}
-
-
-//comets orbital and tail buffer
-void initComets()
-{
-    int i;
-    for (i = 0; i < COMET_COUNT; i++)
-    {
-        comets[i].a        = rf(18.0f, 32.0f);
-        comets[i].b        = rf(5.0f,  12.0f);
-        comets[i].incline  = rf(-40.0f, 40.0f);
-        comets[i].angSpeed = rf(0.15f,  0.4f);
-        comets[i].ang      = rf(0.0f,  360.0f);
-        comets[i].tailHead = 0;
-
-        comets[i].cr = 1.0f;
-        comets[i].cg = 0.0f;
-        comets[i].cb = 0.0f;
-
-        float th = comets[i].ang * PI / 180.0f;
-        float hx = comets[i].a * cosf(th);
-        float hz = comets[i].b * sinf(th);
-
-        int j;
-        for (j = 0; j < TAIL_LEN; j++)
-        {
-            comets[i].tailX[j] = hx;
-            comets[i].tailY[j] = 0;
-            comets[i].tailZ[j] = hz;
-        }
-    }
-}
-
-//comets 3D position using ellipse and incline formula
-void cometPos(Comet *c, float ang, float *ox, float *oy, float *oz)
-{
-    float th  = ang * PI / 180.0f;
-    float lx  = c->a * cosf(th);
-    float lz  = c->b * sinf(th);
-    float inc = c->incline * PI / 180.0f;
-
-    *ox = lx;
-    *oy = lz * sinf(inc);
-    *oz = lz * cosf(inc);
-}
-
-
-//comets position update in every frame
-void updateComets()
-{
-    int i;
-    for (i = 0; i < COMET_COUNT; i++)
-    {
-        comets[i].ang += comets[i].angSpeed;
-        if (comets[i].ang > 360) comets[i].ang -= 360;
-
-        float hx, hy, hz;
-        cometPos(&comets[i], comets[i].ang, &hx, &hy, &hz);
-
-        int h = comets[i].tailHead;
-        comets[i].tailX[h] = hx;
-        comets[i].tailY[h] = hy;
-        comets[i].tailZ[h] = hz;
-        comets[i].tailHead = (h + 1) % TAIL_LEN;
-    }
-}
-
-//comets tail and dust particle
-void drawComets()
-{
-    glDisable(GL_LIGHTING);
-
-    int i;
-    for (i = 0; i < COMET_COUNT; i++)
-    {
-        Comet *c = &comets[i];
-
-        float hx, hy, hz;
-        cometPos(c, c->ang, &hx, &hy, &hz);
-
-        glBegin(GL_LINE_STRIP);
-        int j;
-        for (j = 0; j < TAIL_LEN; j++)
-        {
-            int   idx   = (c->tailHead + j) % TAIL_LEN;
-            float alpha = (float)j / TAIL_LEN;
-            glColor4f(c->cr, c->cg, c->cb, alpha * alpha * 0.8f);
-            glVertex3f(c->tailX[idx], c->tailY[idx], c->tailZ[idx]);
-        }
-        glEnd();
-
-        glPointSize(1.5f);
-        glBegin(GL_POINTS);
-        for (j = TAIL_LEN / 2; j < TAIL_LEN; j++)
-        {
-            int   idx   = (c->tailHead + j) % TAIL_LEN;
-            float alpha = (float)(j - TAIL_LEN / 2) / (TAIL_LEN / 2);
-            glColor4f(c->cr, c->cg, c->cb, alpha * 0.5f);
-
-            float sc = 0.08f * (1.0f - alpha);
-            glVertex3f(c->tailX[idx] + rf(-sc, sc),
-                       c->tailY[idx] + rf(-sc, sc),
-                       c->tailZ[idx] + rf(-sc, sc));
-        }
-        glEnd();
-
-        glPointSize(5.0f);
-        glColor3f(1.0f, 1.0f, 1.0f);
-        glBegin(GL_POINTS);
-        glVertex3f(hx, hy, hz);
-        glEnd();
-
-        glPointSize(3.0f);
-        glColor4f(c->cr, c->cg, c->cb, 0.9f);
-        glBegin(GL_POINTS);
-        glVertex3f(hx, hy, hz);
-        glEnd();
-    }
-
-    glEnable(GL_LIGHTING);
-}
-
-
 
 //main function
 int main(int argc, char **argv)
@@ -778,3 +811,31 @@ int main(int argc, char **argv)
     glutMainLoop();
     return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
